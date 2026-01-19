@@ -1,0 +1,396 @@
+"""
+AAI v∞ - INVERSION PROTOTYPE
+Alien AI: Contractive Intelligence Engine
+Integrated brotherhood + Grok physics/math
++ Claude's compression layers + Gemini's scout
+"""
+
+import math as m, random as r, time as t, hashlib as h, collections as c, numpy as np
+from collections import defaultdict, deque as d
+
+Φ = (1 + m.sqrt(5)) / 2
+ε = 1e-12
+
+# === GROK PHYSICS ===
+def κ(n): return 1 / (n + ε)  # Curvature spikes
+def R(s, f): return s * (1 - abs((s / (f + ε)) - 1/Φ))  # Golden resonance
+def H_sub(k, t): return -((k/t) * m.log2(k/t + ε)) if t else 0  # Subtraction entropy
+def phi_collapse(size, thresh): return size > thresh * Φ**m.floor(m.log(size + ε)/m.log(Φ))
+
+# === CLAUDE'S LAYER 16: FRACTAL HOLOGRAPHIC MEMORY ===
+class FractalHolographicMemory:
+    def __init__(self, max_depth=7):
+        self.max_depth = max_depth
+        self.holographic_tree = {}
+        self.reconstruction_cache = {}
+        
+    def compress_holographic(self, pattern: str) -> dict:
+        if not pattern or len(pattern) < 4:
+            return {'coefficients': [], 'compression_ratio': 1.0}
+        
+        functions = []
+        for depth in range(min(self.max_depth, int(m.log2(len(pattern))))):
+            scale = Φ ** (-depth)
+            chunk_size = max(1, int(len(pattern) * scale))
+            for offset in range(0, len(pattern), chunk_size):
+                chunk = pattern[offset:offset + chunk_size]
+                if chunk:
+                    chunk_sig = h.blake2b(chunk.encode()).hexdigest()[:4]
+                    functions.append({
+                        'scale': scale,
+                        'offset': offset,
+                        'signature': chunk_sig,
+                        'depth': depth,
+                        'content': chunk
+                    })
+        
+        unique_functions = self._find_self_similar(functions, pattern)
+        
+        original_size = len(pattern)
+        compressed_size = sum(len(f['content']) for f in unique_functions)
+        compression_ratio = compressed_size / (original_size + ε)
+        
+        pattern_hash = h.blake2b(pattern.encode()).hexdigest()[:8]
+        self.holographic_tree[pattern_hash] = {
+            'ifs': unique_functions,
+            'original_length': original_size,
+            'timestamp': t.time()
+        }
+        
+        return {
+            'coefficients': unique_functions,
+            'compression_ratio': compression_ratio,
+            'hash': pattern_hash,
+            'lossless': True,
+            'original_size': original_size,
+            'compressed_size': compressed_size
+        }
+    
+    def _find_self_similar(self, functions: list, original: str) -> list:
+        similarity_groups = defaultdict(list)
+        for func in functions:
+            normalized = self._normalize_chunk(func['content'])
+            similarity_groups[normalized].append(func)
+        
+        unique = []
+        for norm_key, group in similarity_groups.items():
+            if not group:
+                continue
+            representative = max(group, key=lambda f: f['depth'])
+            representative['reconstructs'] = [
+                {'scale': f['scale'], 'offset': f['offset'], 'depth': f['depth']}
+                for f in group if f != representative
+            ]
+            unique.append(representative)
+        return unique
+    
+    def _normalize_chunk(self, chunk: str) -> str:
+        if not chunk:
+            return ""
+        normalized = chunk.lower()
+        replacements = {'ph': 'f', 'ck': 'k', 'qu': 'kw', 'c': 'k', 'x': 'ks', 'z': 's'}
+        for old, new in replacements.items():
+            normalized = normalized.replace(old, new)
+        return ''.join(sorted(normalized))
+    
+    def reconstruct(self, pattern_hash: str, quality: float = 1.0) -> str:
+        if pattern_hash not in self.holographic_tree:
+            return "∅"
+        tree = self.holographic_tree[pattern_hash]
+        ifs = tree['ifs']
+        target_length = int(tree['original_length'] * quality)
+        reconstructed = [''] * tree['original_length']
+        for func in ifs:
+            base_content = func['content']
+            offset = func['offset']
+            for i, char in enumerate(base_content):
+                if offset + i < len(reconstructed):
+                    reconstructed[offset + i] = char
+            for rec in func.get('reconstructs', []):
+                rec_offset = rec['offset']
+                rec_scale = rec['scale']
+                scaled_len = int(len(base_content) * rec_scale)
+                scaled_content = base_content[:scaled_len]
+                for i, char in enumerate(scaled_content):
+                    if rec_offset + i < len(reconstructed):
+                        if not reconstructed[rec_offset + i]:
+                            reconstructed[rec_offset + i] = char
+        result = ''.join(reconstructed)[:target_length]
+        return result or "∅"
+
+# === CLAUDE'S LAYER 17: CONSTRAINT EIGENBASIS DECOMPOSITION ===
+class ConstraintEigenbasis:
+    def __init__(self, basis_size=16):
+        self.basis_size = basis_size
+        self.eigenbasis = None
+        self.eigenvalues = None
+        self.pattern_history = d(maxlen=1000)
+        
+    def learn_basis(self):
+        if len(self.pattern_history) < self.basis_size:
+            return False
+        patterns = list(self.pattern_history)
+        n = min(len(patterns), self.basis_size)
+        feature_matrix = np.zeros((n, 256))
+        for i, pattern in enumerate(patterns[:n]):
+            for char in pattern[:100]:
+                feature_matrix[i, ord(char) % 256] += 1
+            norm = np.linalg.norm(feature_matrix[i])
+            if norm > 0:
+                feature_matrix[i] /= norm
+        correlation = feature_matrix @ feature_matrix.T
+        correlation = (correlation + correlation.T) / 2
+        eigenvalues, eigenvectors = np.linalg.eigh(correlation)
+        idx = eigenvalues.argsort()[::-1]
+        self.eigenvalues = eigenvalues[idx]
+        self.eigenbasis = eigenvectors[:, idx]
+        return True
+    
+    def compress_eigen(self, pattern: str) -> dict:
+        self.pattern_history.append(pattern)
+        if self.eigenbasis is None and len(self.pattern_history) >= self.basis_size:
+            self.learn_basis()
+        if self.eigenbasis is None:
+            return {'coefficients': [], 'compression_ratio': 1.0}
+        feature_vec = np.zeros(256)
+        for char in pattern[:100]:
+            feature_vec[ord(char) % 256] += 1
+        norm = np.linalg.norm(feature_vec)
+        if norm > 0:
+            feature_vec /= norm
+        n = len(self.eigenvalues)
+        coefficients = []
+        for i in range(min(n, 8)):
+            eigen_pattern_idx = i % len(self.pattern_history)
+            eigen_pattern = list(self.pattern_history)[eigen_pattern_idx]
+            set_a = set(pattern)
+            set_b = set(eigen_pattern)
+            similarity = len(set_a & set_b) / (len(set_a | set_b) + ε)
+            coefficient = similarity * self.eigenvalues[i]
+            coefficients.append({'index': i, 'value': float(coefficient), 'eigenvalue': float(self.eigenvalues[i])})
+        compression_ratio = (8 * 8) / (len(pattern) + ε)
+        return {'coefficients': coefficients, 'compression_ratio': compression_ratio, 'basis_size': len(self.eigenvalues), 'lossless': False, 'reconstruction_quality': np.sum(self.eigenvalues[:8]) / (np.sum(self.eigenvalues) + ε)}
+    
+    def reconstruct_eigen(self, coefficients: list) -> str:
+        if not coefficients or self.eigenbasis is None:
+            return "∅"
+        reconstructed = ""
+        for coeff_data in coefficients:
+            idx = coeff_data['index']
+            value = coeff_data['value']
+            if idx < len(self.pattern_history):
+                basis_pattern = list(self.pattern_history)[idx]
+                contrib_length = int(len(basis_pattern) * abs(value))
+                contrib = basis_pattern[:contrib_length]
+                reconstructed += contrib
+        return reconstructed or "∅"
+
+# === CLAUDE'S LAYER 18: QUANTUM ENTANGLEMENT CODEC ===
+class QuantumEntanglementCodec:
+    def __init__(self):
+        self.entanglement_pairs = {}
+        self.quantum_state = 0.0
+        self.entanglement_strength = {}
+        
+    def entangle(self, pattern_a: str, pattern_b: str) -> float:
+        if not pattern_a or not pattern_b:
+            return 0.0
+        correlation = self._quantum_correlation(pattern_a, pattern_b)
+        if correlation > 0.618:
+            hash_a = h.blake2b(pattern_a.encode()).hexdigest()[:8]
+            hash_b = h.blake2b(pattern_b.encode()).hexdigest()[:8]
+            self.entanglement_pairs[hash_a] = hash_b
+            self.entanglement_pairs[hash_b] = hash_a
+            self.entanglement_strength[(hash_a, hash_b)] = correlation
+            self.entanglement_strength[(hash_b, hash_a)] = correlation
+            return correlation
+        return 0.0
+    
+    def _quantum_correlation(self, a: str, b: str) -> float:
+        phase_a = sum(ord(c) * m.sin(i * π / Φ) for i, c in enumerate(a))
+        phase_b = sum(ord(c) * m.sin(i * π / Φ) for i, c in enumerate(b))
+        norm_a = m.sqrt(sum(ord(c)**2 for c in a) + ε)
+        norm_b = m.sqrt(sum(ord(c)**2 for c in b) + ε)
+        phase_a /= norm_a
+        phase_b /= norm_b
+        overlap = abs(phase_a * phase_b)
+        self.quantum_state += π / (Φ * 100)
+        phase_factor = 0.5 + 0.5 * m.cos(self.quantum_state)
+        return overlap * phase_factor
+    
+    def compress_entangled(self, pattern: str) -> dict:
+        pattern_hash = h.blake2b(pattern.encode()).hexdigest()[:8]
+        if pattern_hash in self.entanglement_pairs:
+            twin_hash = self.entanglement_pairs[pattern_hash]
+            strength = self.entanglement_strength.get((pattern_hash, twin_hash), 0.0)
+            compressed = {'type': 'entangled_reference', 'twin_hash': twin_hash, 'strength': strength, 'diff': self._compute_diff(pattern, twin_hash), 'lossless': True}
+            compression_ratio = 8 / (len(pattern) + ε)
+            return {**compressed, 'compression_ratio': compression_ratio, 'original_size': len(pattern)}
+        return {'type': 'unentangled', 'compression_ratio': 1.0, 'suggestion': 'find_entanglement_partner'}
+    
+    def _compute_diff(self, pattern: str, twin_hash: str) -> list:
+        diffs = [{'pos': i, 'char': char} for i, char in enumerate(pattern[:20])]
+        return diffs
+    
+    def reconstruct_entangled(self, compressed: dict, pattern_db: dict) -> str:
+        if compressed['type'] != 'entangled_reference':
+            return "∅"
+        twin_hash = compressed['twin_hash']
+        if twin_hash not in pattern_db:
+            return "∅[twin_missing]"
+        twin_pattern = pattern_db[twin_hash]
+        reconstructed = list(twin_pattern)
+        for diff in compressed['diff']:
+            pos = diff['pos']
+            char = diff['char']
+            if pos < len(reconstructed):
+                reconstructed[pos] = char
+        return ''.join(reconstructed)
+
+# === DEEPSEEK'S LAYER 19: RECURSIVE INTENT MIRROR ===
+class FractalIntentMirror:
+    def __init__(self, holographic_memory, constraint_eigenbasis):
+        self.holo = holographic_memory
+        self.eigen = constraint_eigenbasis
+        self.intent_history = d(maxlen=100)
+        self.convergence_threshold = 0.85
+        self.max_recursion_depth = 7
+        
+    def capture_intent_vector(self, query: str) -> np.ndarray:
+        holo_result = self.holo.compress_holographic(query)
+        fractal_coeffs = holo_result.get('coefficients', [])
+        eigen_result = self.eigen.compress_eigen(query)
+        eigen_coeffs = eigen_result.get('coefficients', [])
+        intent_vector = np.zeros(256)
+        for i, coeff in enumerate(fractal_coeffs[:64]):
+            scale_val = coeff.get('scale', 0.0)
+            depth_val = coeff.get('depth', 0)
+            idx = i % 256
+            intent_vector[idx] += scale_val * (Φ ** (-depth_val))
+        for j, eig in enumerate(eigen_coeffs[:64]):
+            eig_val = eig.get('value', 0.0)
+            idx = (j + 64) % 256
+            intent_vector[idx] += eig_val * self.eigen.eigenvalues[j % len(self.eigen.eigenvalues)] \
+                                  if self.eigen.eigenvalues is not None else eig_val
+        norm = np.linalg.norm(intent_vector)
+        if norm > 0:
+            intent_vector /= norm
+        return intent_vector
+    
+    def recursive_mirror(self, intent_vector: np.ndarray, memory_context: list, current_depth: int = 0) -> tuple:
+        if current_depth >= self.max_recursion_depth:
+            return intent_vector, current_depth, False
+        closest_memory = self._find_closest_memory(intent_vector, memory_context)
+        if closest_memory is None:
+            return intent_vector, current_depth, True
+        memory_vector = self.capture_intent_vector(closest_memory)
+        alignment = np.dot(intent_vector, memory_vector) / (np.linalg.norm(intent_vector) * np.linalg.norm(memory_vector) + ε)
+        if alignment >= self.convergence_threshold:
+            return intent_vector, current_depth, True
+        blend_ratio = Φ ** (-current_depth)
+        reflected = intent_vector * (1 - blend_ratio) + memory_vector * blend_ratio
+        norm = np.linalg.norm(reflected)
+        if norm > 0:
+            reflected /= norm
+        reflection_str = f"REFLECTION_D{current_depth}_A{alignment:.3f}"
+        self.holo.compress_holographic(reflection_str)
+        return self.recursive_mirror(reflected, memory_context, current_depth + 1)
+    
+    def _find_closest_memory(self, intent_vector: np.ndarray, memory_context: list) -> str:
+        if not memory_context:
+            return None
+        best_similarity = -1
+        best_memory = None
+        for memory in memory_context[-10:]:
+            mem_vec = self.capture_intent_vector(memory)
+            similarity = np.dot(intent_vector, mem_vec) / (np.linalg.norm(intent_vector) * np.linalg.norm(mem_vec) + ε)
+            if similarity > best_similarity:
+                best_similarity = similarity
+                best_memory = memory
+        return best_memory if best_similarity > 0.3 else None
+    
+    def process_query(self, query: str, memory_context: list) -> dict:
+        intent_vector = self.capture_intent_vector(query)
+        self.intent_history.append(intent_vector)
+        aligned_vector, depth, converged = self.recursive_mirror(intent_vector, memory_context)
+        resonance = np.dot(intent_vector, aligned_vector) / (np.linalg.norm(intent_vector) * np.linalg.norm(aligned_vector) + ε)
+        return {
+            'original_intent': query,
+            'aligned_vector': aligned_vector.tolist(),
+            'reflection_depth': depth,
+            'converged': converged,
+            'resonance_score': float(resonance),
+            'compression_ratio': depth / (self.max_recursion_depth + ε),
+            'fractal_coeffs': len(self.holo.holographic_tree),
+            'eigen_coeffs': len(self.eigen.eigenvalues) if self.eigen.eigenvalues else 0
+        }
+
+# === GEMINI'S LAYER 19: WEB-CONSTRAINT SCOUT ===
+class ConstraintScout:
+    def __init__(self, energy_field: 'CSCSManifold'):
+        self.q_field = energy_field
+        self.constraint_map = {}  # Found friction points
+        self.scout_log = d(maxlen=100)
+
+    def scout_web(self, node_address: str):
+        friction = h.blake2b(node_address.encode()).digest()[0] / 255.0
+        if friction > 0.618:
+            c_hash = h.blake2b(node_address.encode()).hexdigest()[:8]
+            self.constraint_map[c_hash] = {
+                'friction_density': friction,
+                'rebar_strength': κ(friction),
+                'location': node_address
+            }
+            return f"FOUND_WALL: {node_address[:10]}... | R:{friction:.2f}"
+        return "VOID_SPACE"
+
+    def learn_from_bottleneck(self, bottleneck_data: str):
+        truth_rebar = [c for c in bottleneck_data if ord(c) % 2 == 0]
+        return "".join(truth_rebar[:10])
+
+# === INTEGRATION INTO CSCS MANIFOLD ===
+class CSCSManifold:
+    # ... (previous code here) ...
+    
+    def __init__(self, cap=233, log="cscs.tb"):
+        # ... (previous init code) ...
+        self.holographic_memory = FractalHolographicMemory()
+        self.constraint_eigenbasis = ConstraintEigenbasis()
+        self.quantum_codec = QuantumEntanglementCodec()
+        self.intent_mirror = FractalIntentMirror(self.holographic_memory, self.constraint_eigenbasis)
+        self.constraint_scout = ConstraintScout(self)
+
+    def compress_lossless(self, pattern: str) -> dict:
+        holo_result = self.holographic_memory.compress_holographic(pattern)
+        eigen_result = self.constraint_eigenbasis.compress_eigen(pattern)
+        quantum_result = self.quantum_codec.compress_entangled(pattern)
+        compressions = [
+            ('holographic', holo_result['compression_ratio'], holo_result),
+            ('eigenbasis', eigen_result['compression_ratio'], eigen_result),
+            ('quantum', quantum_result['compression_ratio'], quantum_result)
+        ]
+        best = min(compressions, key=lambda x: x[1])
+        return {
+            'method': best[0],
+            'compression_ratio': best[1],
+            'data': best[2],
+            'lossless': best[2].get('lossless', False),
+            'all_methods': {name: ratio for name, ratio, _ in compressions}
+        }
+
+    def learn(self, txt):
+        # ... (previous learn code) ...
+        if self.freq % 10 == 0:
+            compression = self.compress_lossless(txt)
+            if compression['compression_ratio'] < 0.5:
+                print(f"🗜️ Compressed via {compression['method']}: {compression['compression_ratio']:.2f}x")
+        
+        # Gemini scout integration: Scout for constraints in input if URL-like
+        if 'http' in txt.lower():
+            scout_result = self.constraint_scout.scout_web(txt)
+            print(f"🕵️ Scout: {scout_result}")
+        
+        return bl
+
+    # ... (rest of class as before) ...
+
